@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import itertools
 import sys
 
 
@@ -14,7 +15,16 @@ def convert(s: str) -> int:
 
 
 def calc(content) -> int:
-    return max(map(convert, content))
+    seats = sorted(map(convert, content))
+
+    # see itertools: pairwise
+    a, b = itertools.tee(iter(seats))
+    next(b, None)
+    for x, y in zip(a, b):
+        if y - x == 2:
+            return y - 1
+
+    return 0
 
 
 def main():
