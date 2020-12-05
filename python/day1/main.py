@@ -7,13 +7,24 @@ In this list, the two entries that sum to 2020 are 1721 and 299. Multiplying the
 
 import sys
 
+from typing import Set
+
+
+def find_sum_to(entries: Set[int], limit: int) -> int:
+    # if two entries in `entries` sum to `limit`, return their product
+    for e in entries:
+        if (limit - e) in entries:
+            return e * (limit - e)
+
+    return 0
+
 
 def calc(content) -> int:
     entries = set(map(lambda e: int(e.strip()), content))
-
     for e in entries:
-        if (2020 - e) in entries:
-            return e * (2020 - e)
+        result = find_sum_to(entries - {e}, 2020 - e)
+        if result:
+            return e * result
 
     return 0
 
