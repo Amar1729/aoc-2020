@@ -5,9 +5,12 @@ import sys
 
 def is_valid(pw: str, policy: str) -> bool:
     _range, letter = policy.split(" ")
-    lower, higher = map(int, _range.split("-"))
+    s = set(map(lambda x: pw[int(x) - 1], _range.split("-")))
 
-    return lower <= sum(map(lambda x: x == letter, pw)) <= higher
+    if len(s) == 2 and letter in s:
+        return True
+
+    return False
 
 
 def calc(content) -> int:
