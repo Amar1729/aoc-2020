@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import sys
+import re
 
 
 class Passport:
@@ -24,7 +25,7 @@ class Passport:
 
     def valid(self) -> bool:
         # check all required attributes are set
-        return all(
+        if not all(
             map(
                 lambda l: getattr(self, l) is not None,
                 [
@@ -37,7 +38,48 @@ class Passport:
                     "pid",
                 ],
             )
-        )
+        ):
+            return False
+
+        def try_int(s: str, low: int, high: int) -> bool:
+            try:
+                if low <= int(s) <= high:
+                    return True
+                else:
+                    return False
+            except ValueError:
+                return False
+
+        if not try_int(self.byr, 1920, 2002):
+            return False
+
+        if not try_int(self.iyr, 2010, 2020):
+            return False
+
+        if not try_int(self.eyr, 2020, 2030):
+            return False
+
+        if self.hgt.endswith("cm"):
+            if not try_int(self.hgt.rstrip("cm"), 150, 193):
+                return False
+        elif self.hgt.endswith("in"):
+            if not try_int(self.hgt.rstrip("in"), 59, 76):
+                return False
+        else:
+            return False
+
+        if not re.match(r"#[0-9a-f]{6}$", self.hcl):
+            return False
+
+        if self.ecl not in [
+            "amb", "blu", "brn", "gry", "grn", "hzl", "oth",
+        ]:
+            return False
+
+        if not re.match(r"[0-9]{9}$", self.pid):
+            return False
+
+        return True
 
 
 def calc(content):
