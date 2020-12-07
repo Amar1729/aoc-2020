@@ -1,11 +1,21 @@
 #! /usr/bin/env python3
 
+import string
 import sys
 
 
 def calc(content) -> int:
-    groups = [set(group.replace("\n", "")) for group in content]
-    return sum([len(g) for g in groups])
+    return sum(
+        [
+            sum(
+                [
+                    all(c in person for person in group.strip().split("\n"))
+                    for c in string.ascii_lowercase
+                ]
+            )
+            for group in content
+        ]
+    )
 
 
 def main():
