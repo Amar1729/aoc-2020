@@ -12,7 +12,7 @@ def p2(content):
 
 
 def main():
-    content = [l.rstrip("\n") for l in sys.stdin.read()]
+    content = sys.stdin.read().rstrip().split("\n")
 
     print(p1(content))
     # print(p2(content))
