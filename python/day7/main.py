@@ -12,7 +12,7 @@ class Bag:
 
         def parse_child(child):
             num, *_color = child.split(" ")
-            return " ".join(_color), num
+            return " ".join(_color), int(num)
 
         self.children = dict(map(parse_child, re.findall(r"(\d+ \w+ \w+) bag", rule)))
 
@@ -33,11 +33,30 @@ def calc(content) -> int:
     return len(visited)
 
 
+def p2(content) -> int:
+    rules = list(map(Bag, content))
+    counts = {b.color: 0 for b in rules}
+
+    def bag_count(color) -> int:
+        if counts[color]:
+            return counts[color]
+        else:
+            bag = next(filter(lambda b: color == b.color, rules))
+            if not bag.children:
+                counts[bag.color] = 0
+                return counts[bag.color]
+            else:
+                counts[color] = sum(quant * (1 + bag_count(col)) for col, quant in bag.children.items())
+                return counts[color]
+
+    return bag_count("shiny gold")
+
+
 def main():
     with open(sys.argv[1], "r") as f:
         content = f.readlines()
 
-    result = calc(content)
+    result = p2(content)
     print(result)
 
 
