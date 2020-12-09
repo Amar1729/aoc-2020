@@ -39,8 +39,7 @@ def p2(content):
         if curr_sum == total:
             print(f"Range: {i} - {j}")
             print(numbers[i:j + 1])
-            answer = sorted(numbers[i:j + 1])
-            return answer[0] + answer[-1]
+            return sum(sorted(numbers[i:j + 1])[::j - i])
         elif curr_sum < total:
             # too small: range should be increased
             j += 1
