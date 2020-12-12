@@ -13,7 +13,6 @@ def pairwise(itr):
 
 def p1(content) -> int:
     adapters = sorted(list(map(int, content)))
-    adapters = [0] + adapters + [adapters[-1] + 3]
 
     count_1 = 0
     count_3 = 0
@@ -22,8 +21,16 @@ def p1(content) -> int:
             count_1 += 1
         elif y - x == 3:
             count_3 += 1
-        else:
-            pass
+        elif y - x > 3:
+            # not large a gap between adapters
+            raise Exception
+
+    if adapters[0] == 1:
+        count_1 += 1
+    elif adapters[0] == 3:
+        count_3 += 1
+
+    count_3 += 1
 
     return count_1 * count_3
 
