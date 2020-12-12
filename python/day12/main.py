@@ -40,14 +40,44 @@ def p1(content):
 
 
 def p2(content):
-    pass
+    x, y = 0, 0
+
+    # these coordinates are relative to the ship
+    w_x, w_y = 10, 1
+
+    for instruction in content:
+        direction, value = instruction[0], int(instruction[1:])
+
+        if direction == "N":
+            w_y += value
+        elif direction == "S":
+            w_y -= value
+        elif direction == "W":
+            w_x -= value
+        elif direction == "E":
+            w_x += value
+        elif direction == "L":
+            # do steps by 90-degree turns
+            for step in range(value // 90):
+                w_x, w_y = -w_y, w_x
+        elif direction == "R":
+            # do steps by 90-degree turns
+            for step in range(value // 90):
+                w_x, w_y = w_y, -w_x
+        elif direction == "F":
+            x += value * w_x
+            y += value * w_y
+        else:
+            raise Exception
+
+    return abs(x) + abs(y)
 
 
 def main():
     content = sys.stdin.read().rstrip().split("\n")
 
-    print(p1(content))
-    # print(p2(content))
+    # print(p1(content))
+    print(p2(content))
 
 
 if __name__ == "__main__":
