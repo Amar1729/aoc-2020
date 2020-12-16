@@ -8,7 +8,7 @@ def parse_ticket(line: str):
 
 
 def p1(content):
-    fields = {}
+    valid_values = set()
 
     idx = 0
     while True:
@@ -19,20 +19,15 @@ def p1(content):
 
         field, value = line.split(": ")
 
-        valid = []
         for _r in value.split(" or "):
             start, stop = map(int, _r.split("-"))
-            valid += range(start, stop + 1)
-
-        fields[field] = valid
+            valid_values.update(list(range(start, stop + 1)))
 
     idx += 1
-    my_ticket = parse_ticket(content[idx])
+    # my_ticket = parse_ticket(content[idx])
 
     idx += 3
     tickets = [parse_ticket(line) for line in content[idx:]]
-
-    valid_values = set(sv for v in fields.values() for sv in v)
 
     error = sum(
         v for ticket in tickets
