@@ -6,6 +6,14 @@ import sys
 from typing import Tuple, Set
 
 
+def compare(c: int, nc: Tuple[int, int]) -> Tuple[int, int]:
+    if nc is None:
+        nc = (c, c)
+    else:
+        nc = (min(c, nc[0]), (max(c, nc[1])))
+    return nc
+
+
 class Grid:
     def __init__(self, initial):
         self.x = (0, 0)
@@ -46,6 +54,8 @@ class Grid:
         yr = range(self.y[0] - 1, self.y[1] + 2)
         zr = range(self.z[0] - 1, self.z[1] + 2)
 
+        nc = [None] * 3
+
         for x in xr:
             for y in yr:
                 for z in zr:
@@ -53,13 +63,22 @@ class Grid:
                     if (x, y, z) in self.points:
                         if len(nb) in [2, 3]:
                             new_points.update([(x, y, z)])
-                            self.update_bounds(x, y, z)
+                            # self.update_bounds(x, y, z)
+                            nc[0] = compare(x, nc[0])
+                            nc[1] = compare(y, nc[1])
+                            nc[2] = compare(z, nc[2])
                     else:
                         if len(nb) == 3:
                             new_points.update([(x, y, z)])
-                            self.update_bounds(x, y, z)
+                            # self.update_bounds(x, y, z)
+                            nc[0] = compare(x, nc[0])
+                            nc[1] = compare(y, nc[1])
+                            nc[2] = compare(z, nc[2])
 
         self.points = new_points
+        self.x = nc[0]
+        self.y = nc[1]
+        self.z = nc[2]
 
 
 def p1(content):
