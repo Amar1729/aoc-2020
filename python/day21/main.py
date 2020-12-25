@@ -11,7 +11,7 @@ def parse(food):
     return set(ingredients), set(allergens)
 
 
-def p1(content):
+def p1(content, p2=False):
     foods = list(map(parse, content))
 
     translation = {}
@@ -71,18 +71,22 @@ def p1(content):
         for fi in to_delete:
             foods.pop(fi)
 
+    if p2:
+        return translation
+
     return sum(len(ingredients) for ingredients, _ in foods)
 
 
 def p2(content):
-    pass
+    translation = p1(content, p2=True)
+    return ",".join(p[0] for p in sorted(translation.items(), key=lambda p: p[1]))
 
 
 def main():
     content = sys.stdin.read().rstrip().split("\n")
 
-    print(p1(content))
-    # print(p2(content))
+    # print(p1(content))
+    print(p2(content))
 
 
 if __name__ == "__main__":
