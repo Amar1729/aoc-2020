@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import collections
 import sys
 import time
 
@@ -151,11 +152,58 @@ def p2(content):
     return p1(content)
 
 
+def yield_adj(x, y, z, w):
+    for nx in range(x - 1, x + 2):
+        for ny in range(y - 1, y + 2):
+            for nz in range(z - 1, z + 2):
+                for nw in range(w - 1, w + 2):
+                    if (nx, ny, nz, nw) != (x, y, z, w):
+                        yield (nx, ny, nz, nw)
+
+
+def p2_optimized(content):
+    # better than my stupid grid "iterate over every point" approach
+    # ~270 sec -> <0.5 sec
+
+    points = set(
+        (x, y, 0, 0)
+        for y, row in enumerate(content)
+        for x, c in enumerate(row.strip())
+        if c == "#"
+    )
+
+    for step in range(6):
+        new_points = set()
+        check_inactive = collections.Counter()
+
+        for p in points:
+            adj_active = 0
+            for np in yield_adj(*p):
+                if np in points:
+                    adj_active += 1
+                else:
+                    check_inactive[np] += 1
+
+            if adj_active in [2, 3]:
+                new_points.add(p)
+
+        for p, v in check_inactive.items():
+            if v == 3:
+                new_points.add(p)
+
+        points = new_points
+
+        # print(f"{step} : {len(points)}")
+
+    return len(points)
+
+
 def main():
     content = sys.stdin.read().rstrip().split("\n")
 
     # print(p1(content))
-    print(p2(content))
+    # print(p2(content))
+    print(p2_optimized(content))
 
 
 if __name__ == "__main__":
