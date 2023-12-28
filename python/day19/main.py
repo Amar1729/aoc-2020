@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+from __future__ import annotations
+
 import copy
 import sys
 
@@ -7,11 +9,13 @@ from typing import Dict
 
 
 class Rule:
-    def __init__(self, content):
-        addr, content = content.split(": ")
+    content: str | list[list[int]]
+
+    def __init__(self, _content: str):
+        addr, content = _content.split(": ")
         self.addr = int(addr)
 
-        self.literal = True if '"' in content else False
+        self.literal = '"' in content
 
         if self.literal:
             self.content = content.strip('"')
@@ -25,6 +29,7 @@ class Rule:
         return str(self)
 
     def parse(self, s: str, d: Dict[int, "Rule"], depth=0):
+    def parse(self, s: str, d: dict[int, Rule], depth=0):
         if self.literal:
             if s[0] == self.content:
                 return True, s[1:]
