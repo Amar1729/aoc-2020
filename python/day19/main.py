@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import copy
+import subprocess
 import sys
+from pathlib import Path
 
-from typing import Dict
+import pytest
+
+# pip install antlr4-python3-runtime
+from antlr4 import CommonTokenStream, InputStream
 
 
 class Rule:
@@ -28,7 +33,13 @@ class Rule:
     def __repr__(self):
         return str(self)
 
-    def parse(self, s: str, d: Dict[int, "Rule"], depth=0):
+    def antlr(self) -> str:
+        if isinstance(self.content, str):
+            s = f"'{self.content}'"
+        else:
+            s = " | ".join([" ".join([f"g{i}" for i in order]) for order in self.content])
+        return f"g{self.addr}: {s};"
+
     def parse(self, s: str, d: dict[int, Rule], depth=0):
         if self.literal:
             if s[0] == self.content:
@@ -44,7 +55,7 @@ class Rule:
                 s = old_s
                 while order and status and s.strip():
                     next_rule = d[order[0]]
-                    status, s = next_rule.parse(s, d, depth+1)
+                    status, s = next_rule.parse(s, d, depth + 1)
 
                     if not status:
                         break
@@ -60,23 +71,29 @@ class Rule:
             return False, old_s
 
 
-def p1(content):
+def parse_rules(lines: list[str]) -> tuple[int, dict[int, Rule]]:
     rules = {}
 
     c = 0
     while True:
-        if c >= len(content):
+        if c >= len(lines):
             break
 
-        if content[c].strip():
-            rule = Rule(content[c].strip())
+        if lines[c].strip():
+            rule = Rule(lines[c].strip())
             rules[rule.addr] = rule
             c += 1
         else:
             c += 1
             break
 
-    messages = content[c:]
+    return c, rules
+
+
+def p1(content: list[str]) -> int:
+    idx, rules = parse_rules(content)
+
+    messages = content[idx:]
 
     def valid(m: str) -> bool:
         if not m.strip():
@@ -90,15 +107,87 @@ def p1(content):
     return len(list(valid_messages))
 
 
-def p2(content):
-    pass
+def write_antlr_grammar(rules: dict[int, Rule]) -> None:
+    """Convert rules dictionary to antlr4 grammar."""
+
+    pth = Path("solution")
+    pth.mkdir(exist_ok=True)
+    grammar_pth = pth / "Problem.g4"
+
+    with grammar_pth.open("w") as f:
+        f.write("grammar Problem;\n")
+        f.write("prog: g0 EOF;\n")
+        f.write("NEWLINE : [\\r\\n]+ -> skip;")
+
+        for rule in rules.values():
+            f.write(rule.antlr())
+            f.write("\n")
+
+    subprocess.run(
+        # don't worry, this argument's been checked
+        ["/opt/homebrew/bin/antlr", "-Dlanguage=Python3", str(grammar_pth)],  # noqa: S603
+        check=True,
+    )
+
+
+def parse(line: str) -> bool:
+    from solution.ProblemLexer import ProblemLexer
+    from solution.ProblemParser import ProblemParser
+
+    inp = InputStream(line)
+    lexer = ProblemLexer(inp)
+    tokens = CommonTokenStream(lexer)
+    parser = ProblemParser(tokens)
+    tree = parser.prog()
+
+    return tree.parser.getNumberOfSyntaxErrors() == 0
+
+
+def p2(content: list[str]) -> int:
+    idx, rules = parse_rules(content)
+
+    rules[8] = Rule("8: 42 | 42 8")
+    rules[11] = Rule("11: 42 31 | 42 11 31")
+
+    write_antlr_grammar(rules)
+    return sum(parse(msg) for msg in content[idx:])
+
+
+@pytest.mark.parametrize(
+    ("msg", "expected"),
+    [
+        ("aaaaabbaabaaaaababaa", 1),
+        ("aaaabbaabbaaaaaaabbbabbbaaabbaabaaa", 1),
+        ("aaabbbbbbaaaabaababaabababbabaaabbababababaaa", 1),
+        ("aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba", 1),
+        ("ababaaaaaabaaab", 1),
+        ("ababaaaaabbbaba", 1),
+        ("abbbbabbbbaaaababbbbbbaaaababb", 1),
+        ("baabbaaaabbaaaababbaababb", 1),
+        ("babbbbaabbbbbabbbbbbaabaaabaaa", 1),
+        ("bbabbbbaabaabba", 1),
+        ("bbbababbbbaaaaaaaabbababaaababaabab", 1),
+        ("bbbbbbbaaaabbbbaaabbabaaa", 1),
+    ],
+)
+def test_p2(msg: str, expected: int) -> None:
+    # not instant to run this test, as it runs antlr each time.
+    with open("complex.txt") as f:
+        content = f.read().split("\n\n")
+    assert len(content) == 2  # noqa: S101,PLR2004
+
+    content[-1] = msg
+    content = "\n\n".join(content).split("\n")
+
+    assert p2(content) == expected  # noqa: S101
 
 
 def main():
-    content = sys.stdin.read().rstrip().split("\n")
+    with open(sys.argv[1]) as f:
+        content = f.read().rstrip().split("\n")
 
-    print(p1(content))
-    # print(p2(content))
+    # print(p1(content))
+    print(p2(content))
 
 
 if __name__ == "__main__":
