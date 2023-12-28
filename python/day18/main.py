@@ -1,9 +1,58 @@
 #! /usr/bin/env python3
 
-import sys
-import re
+"""
+Had quite some trouble doing part2 with my home-spun parsing approach, so i switched over
+to antlr to help me out. learning it on-the-fly is a bit tough, so i came back (much) later
+to this challenge to solve it.
 
-from typing import List, Union, Tuple
+Make sure to have antlr installed, and generate grammar files via:
+    antlr -Dlanguage=Python3 expr/Expr.g4
+"""
+
+from __future__ import annotations
+
+import math
+import re
+import sys
+
+from antlr4 import CommonTokenStream, InputStream, ParseTreeWalker
+from expr.ExprLexer import ExprLexer
+from expr.ExprListener import ExprListener
+from expr.ExprParser import ExprParser
+
+# #### #### #### #### #### #### #### ####
+# ### Listener used for Part 2 ###
+# #### #### #### #### #### #### #### ####
+
+
+class CalcExprListener(ExprListener):
+    def __init__(self):
+        self.result = {}
+
+    def exitProg(self, ctx: ExprParser.ProgContext):
+        self.result["FINAL"] = self.result[ctx.getChild(0)]
+
+    def exitParens(self, ctx: ExprParser.ParensContext):
+        assert ctx.getChildCount() == 3
+        self.result[ctx] = self.result[ctx.getChild(1)]
+
+    def exitExpr(self, ctx: ExprParser.ExprContext):
+        self.result[ctx] = math.prod(
+            [self.result[ctx.getChild(i)] for i in range(0, ctx.getChildCount(), 2)]
+        )
+
+    def exitAddExpr(self, ctx: ExprParser.AddExprContext):
+        self.result[ctx] = sum(
+            [self.result[ctx.getChild(i)] for i in range(0, ctx.getChildCount(), 2)]
+        )
+
+    def exitInt(self, ctx: ExprParser.IntContext):
+        self.result[ctx] = int(ctx.getChild(0).getText())
+
+
+# #### #### #### #### #### #### #### ####
+# ### Part 1 ###
+# #### #### #### #### #### #### #### ####
 
 
 def lex_rec(expr: str):
@@ -47,7 +96,7 @@ def calculate_tokens(tokens) -> int:
             if op == ")":
                 return s
 
-            if isinstance(tokens[0], str) and tokens[0] == "(":
+            if isinstance(tokens[0], str) and tokens[0] == "(":  # )
                 tokens.pop(0)
                 s2 = calculate_tokens(tokens)
             elif isinstance(tokens[0], int):
@@ -57,7 +106,7 @@ def calculate_tokens(tokens) -> int:
 
             s = eval(f"{s} {op} {s2}")
 
-        elif tokens[0] == "(":
+        elif tokens[0] == "(":  # )
             tokens.pop(0)
             s = calculate_tokens(tokens)
 
@@ -66,7 +115,7 @@ def calculate_tokens(tokens) -> int:
 
             if isinstance(tokens[0], int):
                 s2 = tokens.pop(0)
-            elif isinstance(tokens[0], str) and tokens[0] == "(":
+            elif isinstance(tokens[0], str) and tokens[0] == "(":  # )
                 tokens.pop(0)
                 s2 = calculate_tokens(tokens)
 
@@ -89,15 +138,38 @@ def p1(content):
     return sum(list(map(parse, content)))
 
 
-def p2(content):
-    pass
+# #### #### #### #### #### #### #### ####
+# ### Part 2 ###
+# #### #### #### #### #### #### #### ####
 
 
-def main():
-    content = sys.stdin.read().rstrip().split("\n")
+def parse_antlr(line: str) -> int:
+    inp = InputStream(line)
+    lexer = ExprLexer(inp)
+    tokens = CommonTokenStream(lexer)
+    parser = ExprParser(tokens)
 
-    print(p1(content))
-    # print(p2(content))
+    tree = parser.prog()
+
+    listener = CalcExprListener()
+
+    walker = ParseTreeWalker()
+    walker.walk(listener, tree)
+
+    print("FINAL: ", listener.result["FINAL"])
+    return listener.result["FINAL"]
+
+
+def p2(content: list[str]) -> int:
+    return sum(map(parse_antlr, content))
+
+
+def main() -> None:
+    with open(sys.argv[1]) as f:
+        content = [line.strip() for line in f.readlines()]
+
+    # print(p1(content))
+    print(p2(content))
 
 
 if __name__ == "__main__":
